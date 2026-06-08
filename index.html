@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ε–δ 射箭挑戰賽 ｜ 用遊戲看懂極限</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700;900&family=Noto+Sans+TC:wght@400;500;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4ecda; --card:#fdfaf0; --ink:#2a2622; --ink-soft:#5d564c; --line:#d9ccae;
+    --cinnabar:#b8362b; --cinnabar-soft:#e9a79f; --jade:#2e7d63; --jade-soft:#a9cfbf;
+    --gold:#b58a2e; --shadow:rgba(60,42,20,.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:"Noto Sans TC",sans-serif;color:var(--ink);background:#211c16;
+    background-image:radial-gradient(circle at 30% 20%,#3a3026 0%,#1c1813 70%);}
+  h1,h2,h3,.serif{font-family:"Noto Serif TC",serif;}
+
+  #viewport{position:fixed;inset:0;display:grid;place-items:center;}
+  #stage{width:1280px;height:720px;position:absolute;left:50%;top:50%;transform-origin:center center;
+    background:radial-gradient(circle at 18% 0%,#faf3e2 0%,transparent 55%),
+      radial-gradient(circle at 92% 100%,#f0e4ca 0%,transparent 52%),var(--paper);
+    border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.3);
+    display:flex;flex-direction:column;}
+  #stage::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.05;z-index:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
+
+  .head{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;
+    padding:13px 30px;border-bottom:1px solid var(--line);flex:none;}
+  .brand{font-family:"Noto Serif TC";font-weight:700;letter-spacing:.05em;font-size:1.05rem;}
+  .brand .seal{color:var(--cinnabar);}
+  .head .right{display:flex;align-items:center;gap:14px;}
+  .stuchip{display:flex;align-items:center;gap:7px;font-size:.82rem;background:#fff;border:1px solid var(--line);
+    border-radius:999px;padding:5px 13px;color:var(--ink-soft);}
+  .stuchip b{color:var(--ink);}
+  .counter{font-family:"Noto Serif TC";font-size:.85rem;color:var(--ink-soft);}
+
+  .deck{position:relative;z-index:1;flex:1;overflow:hidden;}
+  .slide{position:absolute;inset:0;padding:20px 46px 8px;opacity:0;visibility:hidden;transform:translateY(14px);
+    transition:opacity .42s,transform .42s,visibility .42s;display:flex;flex-direction:column;}
+  .slide.active{opacity:1;visibility:visible;transform:none;}
+  .step-tag{display:inline-flex;align-items:center;gap:9px;font-family:"Noto Serif TC";font-weight:700;
+    color:var(--cinnabar);font-size:.9rem;letter-spacing:.06em;margin-bottom:1px;}
+  .step-tag .num{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:50%;
+    background:var(--cinnabar);color:#fff;font-size:.82rem;}
+  .slide h2{font-size:1.5rem;font-weight:700;margin:.05em 0 .2em;}
+  .slide p.lead{color:var(--ink-soft);font-size:.93rem;max-width:1000px;margin-bottom:5px;}
+
+  .navbar{position:relative;z-index:2;flex:none;display:flex;align-items:center;justify-content:space-between;
+    padding:9px 30px;border-top:1px solid var(--line);}
+  .navbtn{cursor:pointer;border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:999px;
+    padding:8px 20px;font-family:"Noto Sans TC";font-weight:700;font-size:.9rem;transition:.18s;}
+  .navbtn:hover{background:var(--ink);color:var(--paper);}
+  .navbtn:disabled{opacity:.3;cursor:default;}.navbtn:disabled:hover{background:transparent;color:var(--ink);}
+  .dots{display:flex;gap:8px;}
+  .dots .d{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer;transition:.2s;}
+  .dots .d.on{background:var(--cinnabar);transform:scale(1.35);}
+
+  .formula-card{margin:14px auto 0;max-width:840px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:22px;box-shadow:0 12px 30px -18px var(--shadow);}
+  .formula{font-family:"Noto Serif TC";font-size:1.42rem;text-align:center;line-height:2;}
+  .tok{cursor:pointer;border-radius:6px;padding:1px 4px;transition:.18s;border-bottom:2px solid transparent;}
+  .tok:hover{background:#f6e6c8;}
+  .tok.eps{color:var(--jade);font-weight:700;}.tok.del{color:var(--cinnabar);font-weight:700;}
+  .tok.active{background:#f3e3c2;border-bottom-color:var(--gold);}
+  .formula-hint{margin-top:12px;min-height:42px;text-align:center;color:var(--ink-soft);font-size:.92rem;
+    background:#faf2df;border-radius:9px;padding:8px 14px;border:1px dashed var(--line);}
+  .formula-hint b{color:var(--ink);} .eps-text{color:var(--jade);font-weight:700;} .del-text{color:var(--cinnabar);font-weight:700;}
+
+  .callout{border-left:4px solid var(--gold);background:#faf2dd;border-radius:0 10px 10px 0;
+    padding:11px 16px;color:var(--ink-soft);font-size:.92rem;}
+  .callout b{color:var(--ink);}
+
+  .cover{align-items:center;justify-content:center;text-align:center;}
+  .cover .kick{display:inline-block;letter-spacing:.5em;font-size:.74rem;color:var(--jade);
+    border:1px solid var(--jade-soft);border-radius:999px;padding:5px 16px 5px 21px;margin-bottom:18px;}
+  .cover h1{font-size:3rem;font-weight:900;line-height:1.25;}
+  .cover h1 .red{color:var(--cinnabar);}
+  .cover .sub{color:var(--ink-soft);font-size:1.08rem;max-width:640px;margin:10px auto 0;}
+
+  .roles{display:flex;gap:16px;margin:14px 0 10px;}
+  .role{flex:1;border-radius:14px;padding:18px 20px;border:1px solid var(--line);display:flex;gap:14px;background:#fff;}
+  .role .icon{font-size:2rem;flex:none;}
+  .role.eps{border-left:5px solid var(--jade);}.role.del{border-left:5px solid var(--cinnabar);}
+  .role .ttl{font-weight:700;font-family:"Noto Serif TC";font-size:1.1rem;}
+  .role.eps .ttl{color:var(--jade);}.role.del .ttl{color:var(--cinnabar);}
+  .role .desc{font-size:.92rem;color:var(--ink-soft);margin-top:3px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;
+    box-shadow:0 14px 34px -22px var(--shadow);}
+  .approach{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:center;}
+  .ctrl{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 15px;}
+  .ctrl .label{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;margin-bottom:6px;}
+  .ctrl.eps .label{color:var(--jade);}.ctrl.del .label{color:var(--cinnabar);}
+  .ctrl .who{font-size:.76rem;font-weight:500;color:var(--ink-soft);}
+  .val{font-family:"Noto Serif TC";font-size:1.18rem;}
+  input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:99px;background:var(--line);outline:none;margin:3px 0;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+    cursor:pointer;border:3px solid #fff;box-shadow:0 2px 6px var(--shadow);}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;cursor:pointer;border:3px solid #fff;}
+  .ctrl.eps input::-webkit-slider-thumb{background:var(--jade);} .ctrl.eps input::-moz-range-thumb{background:var(--jade);}
+  .ctrl.del input::-webkit-slider-thumb{background:var(--cinnabar);} .ctrl.del input::-moz-range-thumb{background:var(--cinnabar);}
+  .gauge{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;}
+  .gauge .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+  .gauge .big{font-family:"Noto Serif TC";font-size:1.4rem;}
+  .bar{height:13px;background:#eee3cb;border-radius:99px;overflow:hidden;}
+  .bar i{display:block;height:100%;border-radius:99px;transition:width .12s;}
+
+  .ftabs{display:flex;gap:10px;margin:6px 0 9px;}
+  .ftab{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 16px;
+    font-family:"Noto Serif TC";font-weight:700;font-size:.92rem;color:var(--ink-soft);transition:.18s;}
+  .ftab.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .game-grid{display:grid;grid-template-columns:516px 1fr;gap:18px;align-items:start;}
+  .canvas-box{background:#fffdf6;border:1px solid var(--line);border-radius:12px;padding:7px;}
+  .panel{display:flex;flex-direction:column;gap:8px;}
+  .verdict{border-radius:11px;padding:9px 14px;text-align:center;font-family:"Noto Serif TC";font-weight:700;
+    font-size:.98rem;border:1px solid var(--line);transition:.2s;}
+  .verdict.win{background:#e7f3ec;color:var(--jade);border-color:var(--jade-soft);}
+  .verdict.lose{background:#fbe9e6;color:var(--cinnabar);border-color:var(--cinnabar-soft);}
+  .verdict small{display:block;font-family:"Noto Sans TC";font-weight:500;font-size:.76rem;color:var(--ink-soft);margin-top:2px;}
+  .toggle-hint{display:flex;align-items:center;gap:7px;font-size:.82rem;color:var(--ink-soft);cursor:pointer;}
+  .btnrow{display:flex;gap:9px;}
+  button.act{flex:1;cursor:pointer;font-family:"Noto Sans TC";font-weight:700;font-size:.85rem;border-radius:10px;
+    padding:8px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);transition:.18s;}
+  button.act.ghost{background:transparent;color:var(--ink);}
+  button.act.jade{background:var(--jade);border-color:var(--jade);}
+  button.act:hover{transform:translateY(-1px);}
+  .rounds{display:flex;gap:7px;margin-top:1px;}
+  .pip{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:.64rem;color:var(--ink-soft);}
+  .pip .dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;
+    font-family:"Noto Serif TC";font-weight:700;font-size:.76rem;background:#fff;transition:.2s;}
+  .pip.done .dot{background:var(--jade);border-color:var(--jade);color:#fff;}
+  .gnote{font-size:.8rem;color:var(--ink-soft);background:#faf2df;border-radius:8px;padding:7px 11px;border:1px dashed var(--line);}
+
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  .twocol .card h3{font-size:1.05rem;margin-bottom:6px;}
+  .twocol .card h3.j{color:var(--jade);}.twocol .card h3.c{color:var(--cinnabar);}
+  .twocol p{font-size:.9rem;color:var(--ink-soft);margin-bottom:6px;}
+  .twocol .serif{color:var(--ink);}
+
+  /* quiz */
+  .quizcard .qmeta{font-size:.84rem;color:var(--ink-soft);margin-bottom:10px;}
+  .quizcard .qmeta b{color:var(--cinnabar);}
+  .qbody{font-size:1.08rem;background:#fff;border:1px solid var(--line);border-radius:11px;padding:15px 17px;margin-bottom:14px;line-height:1.9;}
+  .qbody .qfn{display:inline-block;font-family:"Noto Serif TC";font-weight:700;font-size:.78rem;border-radius:999px;
+    padding:2px 11px;margin-right:8px;color:#fff;}
+  .qbody .qfn.lin{background:var(--jade);}.qbody .qfn.quad{background:var(--cinnabar);}
+  .qbody .serif{font-family:"Noto Serif TC";}
+  .qinput{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .qinput .lab{font-family:"Noto Serif TC";font-weight:700;font-size:1.05rem;}
+  .qinput input{width:150px;padding:10px 13px;border:1px solid var(--line);border-radius:10px;font-size:1.05rem;font-family:"Noto Sans TC";}
+  .qinput input:focus{outline:2px solid var(--jade-soft);}
+  .qinput .act{flex:0 0 auto;width:104px;}
+  .qfeedback{margin-top:13px;border-radius:10px;padding:12px 15px;font-size:.92rem;display:none;line-height:1.85;}
+  .qfeedback.show{display:block;}
+  .qfeedback.ok{background:#e7f3ec;color:#225a47;border:1px solid var(--jade-soft);}
+  .qfeedback.bad{background:#fbe9e6;color:#8e2a22;border:1px solid var(--cinnabar-soft);}
+  .qfeedback b{color:var(--ink);}
+  .qnav{margin-top:13px;display:flex;justify-content:flex-end;}
+  .qnav .act{flex:0 0 auto;width:auto;padding:9px 22px;}
+  .qdone{text-align:center;padding:14px;}
+  .qdone .big{font-family:"Noto Serif TC";font-weight:900;font-size:2.4rem;color:var(--cinnabar);}
+  .qadvice{margin-top:14px;border-radius:11px;padding:12px 16px;font-size:.95rem;line-height:1.8;text-align:left;
+    background:#faf2dd;border-left:4px solid var(--gold);color:var(--ink);}
+  .qadvice span{color:var(--ink-soft);font-size:.9rem;}
+  .qadvice.good{border-left-color:var(--jade);background:#e7f3ec;color:#225a47;}
+  .qjump{margin-top:10px;}
+  .jumpbtn{cursor:pointer;font-family:"Noto Sans TC";font-weight:700;font-size:.85rem;border-radius:999px;
+    padding:8px 18px;border:1px solid var(--cinnabar);background:#fff;color:var(--cinnabar);transition:.18s;}
+  .jumpbtn:hover{background:var(--cinnabar);color:#fff;}
+  .qadvice.good .jumpbtn{border-color:var(--jade);color:var(--jade);}
+  .qadvice.good .jumpbtn:hover{background:var(--jade);color:#fff;}
+
+  .hole-grid{display:grid;grid-template-columns:470px 1fr;gap:22px;align-items:center;}
+  .switch{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-bottom:12px;}
+  .switch button{cursor:pointer;border:none;background:#fff;padding:9px 18px;font-family:"Noto Sans TC";
+    font-weight:700;font-size:.88rem;color:var(--ink-soft);}
+  .switch button.on{background:var(--cinnabar);color:#fff;}
+  #holeCallout{transition:opacity .4s,transform .4s;}
+
+  .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:14px;}
+  .scard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;position:relative;overflow:hidden;}
+  .scard .qn{position:absolute;right:12px;top:-6px;font-family:"Zhi Mang Xing";font-size:4.4rem;color:#efe1c4;}
+  .scard h3{margin:0 0 .3em;font-size:1.1rem;position:relative;}
+  .scard p{font-size:.9rem;color:var(--ink-soft);position:relative;}
+
+  canvas{display:block;border-radius:8px;}
+
+  #fsbtn{position:fixed;z-index:60;right:16px;top:14px;cursor:pointer;border:1px solid #fff8;
+    background:#0006;color:#fff;border-radius:999px;padding:7px 16px;font-size:.82rem;backdrop-filter:blur(4px);}
+  #login{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(20,16,12,.82);backdrop-filter:blur(5px);}
+  .login-card{background:var(--card);border-radius:18px;padding:34px 36px;width:380px;max-width:90vw;
+    box-shadow:0 30px 70px -20px #000;text-align:center;}
+  .login-card .seal{display:inline-block;border:2px solid var(--cinnabar);color:var(--cinnabar);
+    font-family:"Noto Serif TC";border-radius:8px;padding:4px 12px;letter-spacing:.2em;margin-bottom:14px;}
+  .login-card h2{font-size:1.4rem;margin-bottom:4px;}
+  .login-card p{font-size:.88rem;color:var(--ink-soft);margin-bottom:18px;}
+  .login-card label{display:block;text-align:left;font-size:.82rem;color:var(--ink-soft);margin:10px 0 4px;font-weight:700;}
+  .login-card input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:1rem;font-family:"Noto Sans TC";}
+  .login-card input:focus{outline:2px solid var(--jade-soft);}
+  .login-card .go{margin-top:20px;width:100%;cursor:pointer;border:none;background:var(--cinnabar);color:#fff;
+    font-family:"Noto Serif TC";font-weight:700;font-size:1.05rem;border-radius:11px;padding:13px;}
+  .login-card .guest{margin-top:10px;background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:.84rem;text-decoration:underline;}
+  .login-card .err{color:var(--cinnabar);font-size:.8rem;min-height:18px;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<button id="fsbtn">⛶ 全螢幕</button>
+
+<div id="login">
+  <div class="login-card">
+    <div class="seal">極限 · 挑戰</div>
+    <h2>ε–δ 射箭挑戰賽</h2>
+    <p>輸入班級與姓名，闖關進度會回報給老師的儀表板。</p>
+    <label>班級（例：701）</label>
+    <input id="inCls" inputmode="text" placeholder="701" autocomplete="off">
+    <label>姓名或座號</label>
+    <input id="inName" placeholder="王小明 / 25" autocomplete="off">
+    <div class="err" id="loginErr"></div>
+    <button class="go" id="loginGo">開始挑戰 →</button>
+    <button class="guest" id="loginGuest">以訪客身分進入（不記錄）</button>
+  </div>
+</div>
+
+<div id="viewport">
+<div id="stage">
+  <div class="head">
+    <div class="brand"><span class="seal">⊙</span>　ε–δ 射箭挑戰賽</div>
+    <div class="right">
+      <div class="stuchip" id="stuchip" style="display:none">🎓 <b id="stuName">—</b>｜<span id="stuCls">—</span></div>
+      <div class="counter"><span id="cnow">1</span> / <span id="ctot">8</span></div>
+    </div>
+  </div>
+
+  <div class="deck" id="deck">
+
+    <!-- 1 COVER -->
+    <section class="slide cover active">
+      <span class="kick">極 限 的 嚴 格 定 義</span>
+      <h1>用一場<span class="red">射箭挑戰賽</span><br>看懂大學的極限公式</h1>
+      <p class="sub">把「無限靠近」這個玄妙的想法，變成一個誰都能玩的數字遊戲。</p>
+      <div class="formula-card">
+        <div class="formula" id="formula">
+          <span class="tok" data-k="lim">lim<sub style="font-size:.6em">x→x₀</sub> f(x) = L</span>
+          <span style="color:var(--gold)"> ⟺ </span>
+          <span class="tok eps" data-k="forall">∀&thinsp;ε&gt;0</span>,
+          <span class="tok del" data-k="exists">∃&thinsp;δ&gt;0</span>
+          <span style="color:var(--ink-soft);font-size:.82em"> s.t. </span>
+          <span class="tok del" data-k="near">0 &lt; |x − x₀| &lt; δ</span>
+          <span style="color:var(--gold)"> ⟹ </span>
+          <span class="tok eps" data-k="close">|f(x) − L| &lt; ε</span>
+        </div>
+        <div class="formula-hint" id="fhint">👆 點公式裡任一段文字，看它在遊戲裡代表什麼動作。</div>
+      </div>
+    </section>
+
+    <!-- 2 INTUITION -->
+    <section class="slide">
+      <div class="step-tag"><span class="num">壹</span> 先忘掉公式：極限在問什麼？</div>
+      <h2>「越走越近，但永遠不進門」</h2>
+      <p class="lead">把輸入 <b>x</b> 慢慢推向 <span class="del-text">x₀ = 2</span>，注意 <span class="serif">f(x)=2x+1</span> 的輸出——它越來越靠近誰？</p>
+      <div class="card">
+        <div class="approach">
+          <div class="ctrl del" style="border-color:var(--line)">
+            <div class="label"><span>輸入 x（走向 x₀ = 2）</span><span class="val" id="axVal">1.000</span></div>
+            <input type="range" id="ax" min="0" max="1.985" step="0.005" value="1">
+            <div style="font-size:.8rem;color:var(--ink-soft)">把滑桿推到最右，看 x 離 2 還差一點點時發生什麼事。</div>
+          </div>
+          <div class="gauge">
+            <div class="row"><span>輸出 f(x)</span><span class="big" id="afx" style="color:var(--cinnabar)">3.000</span></div>
+            <div class="bar"><i id="abar1" style="background:var(--cinnabar);width:30%"></i></div>
+            <div class="row" style="margin-top:12px"><span>離目標 L = 5 還差 <span style="font-size:.8em">|f(x)−5|</span></span><span class="big" id="agap" style="color:var(--jade)">2.000</span></div>
+            <div class="bar"><i id="abar2" style="background:var(--jade);width:100%"></i></div>
+            <p id="amsg" style="margin-top:11px;font-size:.9rem;color:var(--ink-soft)">x 還離得遠，f(x) 也離 5 遠。</p>
+          </div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:12px">📌 x 越靠近 2，f(x) 就越靠近 <b>5</b>。這個「靠近的目標」就叫<b>極限 L</b>。注意 x 永遠沒真的等於 2——我們只看靠近的過程。</div>
+    </section>
+
+    <!-- 3 ROLES -->
+    <section class="slide">
+      <div class="step-tag"><span class="num">貳</span> 認識兩位玩家：ε 與 δ</div>
+      <h2>審查官出題，你來防守</h2>
+      <p class="lead">極限「存在」其實是一場攻防遊戲。函數 f(x) 是一台「輸入 x、輸出答案」的機器，兩位玩家輪流出招：</p>
+      <div class="roles">
+        <div class="role eps"><div class="icon">🎯</div><div>
+          <div class="ttl">審查官 ＝ ε（epsilon）</div>
+          <div class="desc">在目標 L 上下畫一條「<b>誤差容忍帶</b>」：結果必須落在 L ± ε 之內。ε 可以越畫越小、越來越嚴格。</div></div></div>
+        <div class="role del"><div class="icon">🏹</div><div>
+          <div class="ttl">你 ＝ δ（delta）</div>
+          <div class="desc">找出一個「<b>安全靠近距離</b>」δ：只要 x 與 x₀ 距離小於 δ，就保證命中——f(x) 一定落在帶子裡。</div></div></div>
+      </div>
+      <div class="callout">🏆 <b>勝利條件：</b>不管審查官把帶子畫得多窄（ε 任意小），你都能找到對應的 δ 守住。永遠不會輸——<b>極限就存在</b>。</div>
+    </section>
+
+    <!-- 4 GAME -->
+    <section class="slide" data-init="game">
+      <div class="step-tag"><span class="num">參</span> 開始對戰：ε–δ 射箭挑戰</div>
+      <h2>調整 δ，把曲線關進帶子裡</h2>
+      <div class="ftabs">
+        <button class="ftab on" data-fn="line">f(x) = 2x + 1（直線）</button>
+        <button class="ftab" data-fn="quad">f(x) = x²（曲線 · 進階）</button>
+      </div>
+      <div class="game-grid">
+        <div class="canvas-box"><canvas id="game"></canvas></div>
+        <div class="panel">
+          <div class="ctrl eps">
+            <div class="label"><span>ε 容忍帶寬 <span class="who">／ 審查官</span></span><span class="val" id="epsVal">1.00</span></div>
+            <input type="range" id="eps" min="0.04" max="2" step="0.01" value="1">
+          </div>
+          <div class="ctrl del">
+            <div class="label"><span>δ 安全距離 <span class="who">／ 你</span></span><span class="val" id="delVal">0.80</span></div>
+            <input type="range" id="del" min="0.02" max="1.5" step="0.01" value="0.8">
+          </div>
+          <div class="verdict" id="verdict">調整看看…</div>
+          <label class="toggle-hint"><input type="checkbox" id="hintchk"> 顯示「保證獲勝」的 δ 提示</label>
+          <div class="btnrow">
+            <button class="act jade" id="harder">😈 ε 減半</button>
+            <button class="act" id="autowin">🏹 自動獲勝</button>
+            <button class="act ghost" id="reset">↺ 重置</button>
+          </div>
+          <div class="rounds" id="rounds"></div>
+          <div class="gnote" id="gnote">直線：δ 與 ε 成簡單正比，δ = ε ÷ 2。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 EXAMPLE -->
+    <section class="slide">
+      <div class="step-tag"><span class="num">肆</span> 兩種機器，兩種 δ 的算法</div>
+      <h2>線性 vs 非線性：δ 不一定是 ε ÷ 2</h2>
+      <div class="twocol">
+        <div class="card">
+          <h3 class="j serif">直線　lim<sub style="font-size:.6em">x→2</sub>(2x+1)=5</h3>
+          <p>距離：|(2x+1)−5| = 2|x−2|。要它 &lt; ε，只需 |x−2| &lt; ε/2。</p>
+          <p>所以 <span class="del-text serif">δ = ε ÷ 2</span>。ε=0.1 → δ=0.05；ε=0.02 → δ=0.01。</p>
+          <p>δ 與 ε 成<b>固定比例</b>，因為直線斜率固定（=2）。</p>
+        </div>
+        <div class="card">
+          <h3 class="c serif">曲線　lim<sub style="font-size:.6em">x→1</sub> x² = 1</h3>
+          <p>距離：|x²−1| = |x−1|·|x+1|。x 越大時 |x+1| 越大，曲線越「陡」。</p>
+          <p>解 (1+δ)² ≤ 1+ε 得 <span class="del-text serif">δ = √(1+ε) − 1</span>。ε=0.1 → δ≈0.0488；ε=0.02 → δ≈0.00995。</p>
+          <p>δ 與 ε <b>不再成正比</b>！這就是非線性函數的關鍵差異。</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:14px">🔑 不論線性或非線性，重點都一樣：<b>給我任意 ε，我永遠交得出對應的 δ</b>。算法不同，但「找得到」這件事不變——所以兩個極限都存在。</div>
+    </section>
+
+    <!-- 6 CHALLENGE -->
+    <section class="slide" data-init="quiz">
+      <div class="step-tag"><span class="num">伍</span> 換你出招：算出 δ 的範圍</div>
+      <h2>自己算一次，再核對答案</h2>
+      <p class="lead">審查官給你一個 ε，請算出「保證命中」的<b>最大 δ</b>（取到小數第 3 位）。算完按核對，檢查你是不是真的學會了。</p>
+      <div class="card quizcard">
+        <div class="qmeta">第 <b id="qnum">1</b> / 4 題　·　答對 <b id="qscore">0</b> 題</div>
+        <div class="qbody" id="qbody"></div>
+        <div class="qinput">
+          <span class="lab">δ 最大 ≈</span>
+          <input id="qans" type="number" step="0.001" inputmode="decimal" placeholder="例：0.15">
+          <button class="act" id="qcheck">核對</button>
+          <button class="act ghost" id="qhint">提示</button>
+        </div>
+        <div class="qfeedback" id="qfeedback"></div>
+        <div class="qnav"><button class="act" id="qnext" style="display:none">下一題 →</button></div>
+      </div>
+    </section>
+
+    <!-- 7 HOLE -->
+    <section class="slide" data-init="hole">
+      <div class="step-tag"><span class="num">陸</span> 最關鍵的小字：為什麼寫 0 &lt; |x − x₀|？</div>
+      <h2>就算機器在那一點壞掉，極限照樣存在</h2>
+      <div class="card">
+        <div class="hole-grid">
+          <div class="canvas-box"><canvas id="holecanvas"></canvas></div>
+          <div>
+            <div class="switch">
+              <button id="machineOk" class="on">正常機器</button>
+              <button id="machineBroken">壞掉的機器</button>
+            </div>
+            <p id="holeText" style="font-size:.95rem;margin-bottom:8px">這是正常的 f(x)=2x+1，在 x=2 時輸出 5。</p>
+            <p style="font-size:.9rem;color:var(--ink-soft);margin-bottom:10px">點上方兩顆按鈕，把機器切到「壞掉」狀態看看——在 x=2 挖一個洞，當 x 從兩側靠近 2，f(x) 仍然 → 5。</p>
+            <div id="holeLock" class="callout" style="border-left-color:var(--ink-soft);background:#efe7d3">🔒 看完「正常機器」與「壞掉的機器」兩種狀態後，下方的關鍵結論就會出現。</div>
+            <div id="holeCallout" class="callout" style="display:none;opacity:0;transform:translateY(8px)">🧠 這正是 0 &lt; |x−x₀| 的用意：我們<b>從不問 x=x₀ 那一點</b>。牛頓時代「那個無限小量是不是零」的爭論，在這個定義下根本不會發生。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 SUMMARY -->
+    <section class="slide">
+      <div class="step-tag"><span class="num">柒</span> 三句話總結</div>
+      <h2>把整個故事收進三句話</h2>
+      <div class="summary">
+        <div class="scard"><span class="qn">一</span><h3>極限是「趨向」</h3><p>越來越靠近、卻永遠不到達的目標。我們看過程，不看終點。</p></div>
+        <div class="scard"><span class="qn">二</span><h3>ε 是對方的刁難</h3><p>「能容忍多大誤差」由審查官任意指定，且可無限縮小。</p></div>
+        <div class="scard"><span class="qn">三</span><h3>δ 是你的回應</h3><p>為了滿足誤差，你必須靠多近。永遠找得到 δ，極限就存在。</p></div>
+      </div>
+      <div class="callout">✨ 這個定義最偉大之處，是把「無限靠近」這個動態又哲學的概念，變成純粹的數字遊戲：<b>給我任意 ε，我交出對應的 δ。</b>沒有幽靈、沒有神祕的消逝量，只有可以計算的不等式。</div>
+    </section>
+
+  </div>
+
+  <div class="navbar">
+    <button class="navbtn" id="prev">‹ 上一頁</button>
+    <div class="dots" id="dots"></div>
+    <button class="navbtn" id="next">下一頁 ›</button>
+  </div>
+</div>
+</div>
+
+<script>
+/* ===== 設定：貼上你的 GAS 網頁應用程式網址即可開始記錄 ===== */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbz1q5EQwuXvWMG06bBnkUPcYgqQ8m7t0Baj_lubq7f1MJYDtDjHglNfg5zPt7kypYH2/exec"; // 例：https://script.google.com/macros/s/AKfyc.../exec
+
+/* ===== 16:9 auto-fit ===== */
+const STAGE_W=1280, STAGE_H=720, stage=document.getElementById('stage');
+function fit(){const s=Math.min(window.innerWidth/STAGE_W, window.innerHeight/STAGE_H);
+  stage.style.transform=`translate(-50%,-50%) scale(${s})`;}
+window.addEventListener('resize',fit);
+window.addEventListener('orientationchange',()=>setTimeout(fit,150));
+fit();
+
+/* ===== Fullscreen ===== */
+const fsbtn=document.getElementById('fsbtn');
+fsbtn.addEventListener('click',()=>{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();});
+document.addEventListener('fullscreenchange',()=>{fsbtn.textContent=document.fullscreenElement?'⛶ 離開':'⛶ 全螢幕';setTimeout(fit,80);});
+
+/* ===== Login ===== */
+let student={cls:'',name:'',guest:true};
+const loginEl=document.getElementById('login');
+document.getElementById('loginGo').addEventListener('click',()=>{
+  const c=document.getElementById('inCls').value.trim(), n=document.getElementById('inName').value.trim();
+  if(!c||!n){document.getElementById('loginErr').textContent='請填寫班級與姓名';return;}
+  student={cls:c,name:n,guest:false}; enter();
+});
+document.getElementById('loginGuest').addEventListener('click',()=>{student={cls:'訪客',name:'訪客',guest:true};enter();});
+function enter(){
+  loginEl.style.display='none';
+  if(!student.guest){document.getElementById('stuchip').style.display='flex';
+    document.getElementById('stuName').textContent=student.name;document.getElementById('stuCls').textContent=student.cls;}
+  fit();
+}
+function recordProgress(p){
+  if(student.guest||!GAS_URL) return;
+  try{ fetch(GAS_URL,{method:'POST',body:JSON.stringify(Object.assign({action:'record',cls:student.cls,name:student.name,ts:Date.now()},p))}); }
+  catch(e){ console.warn('sync',e); }
+}
+
+/* ===== Canvas helper (retina) ===== */
+function prep(canvas,w,h){
+  const dpr=2; canvas.width=w*dpr; canvas.height=h*dpr;
+  canvas.style.width=w+'px'; canvas.style.height=h+'px';
+  const c=canvas.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
+  return {w,h,ctx:c};
+}
+
+/* ===== Slide controller ===== */
+const slides=[...document.querySelectorAll('.slide')], dots=document.getElementById('dots');
+document.getElementById('ctot').textContent=slides.length;
+let cur=0;
+slides.forEach((_,i)=>{const d=document.createElement('div');d.className='d'+(i===0?' on':'');d.onclick=()=>go(i);dots.appendChild(d);});
+function go(i){
+  cur=Math.max(0,Math.min(slides.length-1,i));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===cur));
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===cur));
+  document.getElementById('cnow').textContent=cur+1;
+  document.getElementById('prev').disabled=cur===0;
+  document.getElementById('next').disabled=cur===slides.length-1;
+  const init=slides[cur].dataset.init;
+  if(init==='game') setTimeout(updateGame,60);
+  if(init==='hole') setTimeout(drawHole,60);
+  if(init==='quiz') setTimeout(initQuiz,60);
+}
+document.getElementById('prev').onclick=()=>go(cur-1);
+document.getElementById('next').onclick=()=>go(cur+1);
+document.addEventListener('keydown',e=>{
+  if(loginEl.style.display!=='none') return;
+  if(document.activeElement&&document.activeElement.tagName==='INPUT') return;
+  if(e.key==='ArrowRight'||e.key==='PageDown') go(cur+1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp') go(cur-1);
+});
+go(0);
+
+/* ===== Formula tokens ===== */
+const fhints={
+  lim:'<b>lim f(x) = L</b>：當 x 趨近 x₀ 時，f(x) 趨近 L。這是我們要證明的目標。',
+  forall:'<b>∀ ε &gt; 0</b>：不管<span class="eps-text">審查官</span>把容忍帶畫得多小，都算數。',
+  exists:'<b>∃ δ &gt; 0</b>：<span class="del-text">你</span>總找得到一個安全靠近距離來應對。',
+  near:'<b>0 &lt; |x − x₀| &lt; δ</b>：x 與 x₀ 的距離小於 δ —— 但<b>不等於</b> x₀ 本身。',
+  close:'<b>|f(x) − L| &lt; ε</b>：結果就一定落在綠色容忍帶裡。命中！'
+};
+const fhint=document.getElementById('fhint');
+document.querySelectorAll('.tok').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tok').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); fhint.innerHTML=fhints[t.dataset.k];
+}));
+
+/* ===== Slide 2 approach ===== */
+const ax=document.getElementById('ax');
+function fLin(x){return 2*x+1;}
+function updateApproach(){
+  const x=parseFloat(ax.value),y=fLin(x),gap=Math.abs(y-5);
+  document.getElementById('axVal').textContent=x.toFixed(3);
+  document.getElementById('afx').textContent=y.toFixed(3);
+  document.getElementById('agap').textContent=gap.toFixed(3);
+  document.getElementById('abar1').style.width=(y/5*100)+'%';
+  document.getElementById('abar2').style.width=(gap/2*100)+'%';
+  const m=document.getElementById('amsg');
+  if(gap<0.05) m.innerHTML='⚡ 好接近了！x 還沒到 2，f(x) 卻已幾乎是 <b>5</b>。這就是「趨近」。';
+  else if(gap<0.5) m.innerHTML='越來越近了…f(x) 正逼近 <b>5</b>。';
+  else m.textContent='x 還離得遠，f(x) 也離 5 遠。';
+}
+ax.addEventListener('input',updateApproach); updateApproach();
+
+/* ===== Slide 4 game ===== */
+const FUNCS={
+  line:{ f:x=>2*x+1, x0:2, L:5, xview:[0,4], yview:[0,10], xticks:[0,1,2,3,4], yticks:[0,2,4,6,8,10],
+         epsRange:[0.04,2], epsDef:1, delRange:[0.02,1.5], delDef:0.8,
+         winDelta:e=>e/2, winLabel:e=>'保證獲勝 δ ≤ '+(e/2).toFixed(3)+'（= ε ÷ 2）',
+         note:'直線：δ 與 ε 成簡單正比，δ = ε ÷ 2。' },
+  quad:{ f:x=>x*x, x0:1, L:1, xview:[0,2], yview:[0,4], xticks:[0,0.5,1,1.5,2], yticks:[0,1,2,3,4],
+         epsRange:[0.04,2], epsDef:0.6, delRange:[0.01,0.9], delDef:0.4,
+         winDelta:e=>Math.sqrt(1+e)-1, winLabel:e=>'保證獲勝 δ ≤ '+(Math.sqrt(1+e)-1).toFixed(3)+'（= √(1+ε)−1）',
+         note:'曲線：δ 不再是 ε 的簡單比例！δ = √(1+ε)−1，越靠近越「擠」。' }
+};
+const ROUND_EPS=[1,0.5,0.3,0.1,0.04];
+const passed={line:new Set(),quad:new Set()};
+let curFn='line';
+const cvs=document.getElementById('game');
+const epsEl=document.getElementById('eps'), delEl=document.getElementById('del');
+const epsVal=document.getElementById('epsVal'), delVal=document.getElementById('delVal');
+const verdict=document.getElementById('verdict'), hintchk=document.getElementById('hintchk');
+const roundsEl=document.getElementById('rounds'), gnote=document.getElementById('gnote');
+
+function drawGame(){
+  const d=FUNCS[curFn];
+  const {w,h,ctx}=prep(cvs,500,358);
+  const pad={l:44,r:14,t:16,b:30}, pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  const eps=parseFloat(epsEl.value), del=parseFloat(delEl.value);
+  const X=x=>pad.l+(x-d.xview[0])/(d.xview[1]-d.xview[0])*pw;
+  const Y=y=>pad.t+(d.yview[1]-y)/(d.yview[1]-d.yview[0])*ph;
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffdf6'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#ece0c4'; ctx.lineWidth=1; ctx.font='10px "Noto Sans TC"'; ctx.fillStyle='#9a8f78';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  d.xticks.forEach(gx=>{ctx.beginPath();ctx.moveTo(X(gx),pad.t);ctx.lineTo(X(gx),pad.t+ph);ctx.stroke();ctx.fillText(gx,X(gx),pad.t+ph+5);});
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  d.yticks.forEach(gy=>{ctx.beginPath();ctx.moveTo(pad.l,Y(gy));ctx.lineTo(pad.l+pw,Y(gy));ctx.stroke();ctx.fillText(gy,pad.l-6,Y(gy));});
+  ctx.fillStyle='rgba(46,125,99,.16)'; ctx.fillRect(pad.l,Y(d.L+eps),pw,Y(d.L-eps)-Y(d.L+eps));
+  ctx.strokeStyle='rgba(46,125,99,.65)'; ctx.setLineDash([6,4]); ctx.lineWidth=1.4;
+  [d.L+eps,d.L-eps].forEach(v=>{if(v<=d.yview[1]&&v>=d.yview[0]){ctx.beginPath();ctx.moveTo(pad.l,Y(v));ctx.lineTo(pad.l+pw,Y(v));ctx.stroke();}});
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(184,54,43,.12)'; ctx.fillRect(X(d.x0-del),pad.t,X(d.x0+del)-X(d.x0-del),ph);
+  ctx.strokeStyle='rgba(184,54,43,.6)'; ctx.setLineDash([6,4]); ctx.lineWidth=1.4;
+  [d.x0-del,d.x0+del].forEach(v=>{ctx.beginPath();ctx.moveTo(X(v),pad.t);ctx.lineTo(X(v),pad.t+ph);ctx.stroke();});
+  ctx.setLineDash([]);
+  ctx.fillStyle='#2e7d63'; ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.font='bold 11px "Noto Serif TC"';
+  if(d.L+eps<=d.yview[1]) ctx.fillText('L+ε',pad.l+4,Y(d.L+eps)-2);
+  if(d.L-eps>=d.yview[0]) ctx.fillText('L−ε',pad.l+4,Y(d.L-eps)+14);
+  ctx.fillStyle='#b8362b'; ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText('x₀−δ',X(d.x0-del),pad.t+2); ctx.fillText('x₀+δ',X(d.x0+del),pad.t+2);
+  ctx.strokeStyle='rgba(60,55,45,.28)'; ctx.lineWidth=2; ctx.beginPath();
+  for(let i=0;i<=200;i++){const x=d.xview[0]+(d.xview[1]-d.xview[0])*i/200;const px=X(x),py=Y(d.f(x));i?ctx.lineTo(px,py):ctx.moveTo(px,py);} ctx.stroke();
+  const steps=140; let allInside=true;
+  for(let i=0;i<steps;i++){
+    const xa=d.x0-del+2*del*i/steps, xb=d.x0-del+2*del*(i+1)/steps;
+    const ya=d.f(xa), yb=d.f(xb);
+    const inside=Math.abs(ya-d.L)<=eps && Math.abs(yb-d.L)<=eps;
+    if(!inside) allInside=false;
+    ctx.strokeStyle=inside?'#2e7d63':'#b8362b'; ctx.lineWidth=inside?4.5:5.5;
+    ctx.beginPath(); ctx.moveTo(X(xa),Y(ya)); ctx.lineTo(X(xb),Y(yb)); ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(X(d.x0),Y(d.L),5,0,7); ctx.fillStyle='#2a2622'; ctx.fill();
+  ctx.fillStyle='#2a2622'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.font='bold 10px "Noto Serif TC"';
+  ctx.fillText('(x₀, L)=('+d.x0+', '+d.L+')',X(d.x0),Y(d.L)-9);
+  if(hintchk.checked){
+    const wd=d.winDelta(eps);
+    ctx.strokeStyle='rgba(181,138,46,.9)'; ctx.lineWidth=2; ctx.setLineDash([3,3]);
+    [d.x0-wd,d.x0+wd].forEach(v=>{ctx.beginPath();ctx.moveTo(X(v),pad.t);ctx.lineTo(X(v),pad.t+ph);ctx.stroke();});
+    ctx.setLineDash([]);
+    ctx.fillStyle='#b58a2e'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.font='bold 10px "Noto Sans TC"';
+    ctx.fillText('δ ≤ '+wd.toFixed(3),X(d.x0),pad.t+ph-15);
+  }
+  return allInside && del>0;
+}
+function updateGame(){
+  const d=FUNCS[curFn], eps=parseFloat(epsEl.value), del=parseFloat(delEl.value);
+  epsVal.textContent=eps.toFixed(2); delVal.textContent=del.toFixed(2);
+  const win=drawGame();
+  if(win){
+    verdict.className='verdict win';
+    verdict.innerHTML='🎯 命中！整段曲線都在容忍帶裡。<small>'+d.winLabel(eps)+'</small>';
+    markRound(eps);
+  }else{
+    verdict.className='verdict lose';
+    verdict.innerHTML='💥 有箭射歪了！紅色部分跑出帶外。<small>把 δ 縮到 '+d.winDelta(eps).toFixed(3)+' 以下試試</small>';
+  }
+}
+function buildRounds(){
+  roundsEl.innerHTML='';
+  ROUND_EPS.forEach((e,i)=>{
+    const div=document.createElement('div');
+    div.className='pip'+(passed[curFn].has(i)?' done':'');
+    div.innerHTML='<div class="dot">'+(passed[curFn].has(i)?'✓':(i+1))+'</div><span>ε='+e+'</span>';
+    roundsEl.appendChild(div);
+  });
+}
+function markRound(eps){
+  ROUND_EPS.forEach((e,i)=>{
+    if(Math.abs(eps-e)<0.005 && !passed[curFn].has(i)){
+      passed[curFn].add(i); buildRounds(); recordProgress({fn:curFn, level:i+1, eps:e});
+      if(passed[curFn].size===ROUND_EPS.length){
+        setTimeout(()=>{verdict.innerHTML='🏆 '+(curFn==='line'?'直線':'曲線')+'五關全過！你親手證明了極限存在。<small>不管 ε 多小，你永遠找得到 δ</small>';},250);
+      }
+    }
+  });
+}
+function applyFn(){
+  const d=FUNCS[curFn];
+  epsEl.min=d.epsRange[0]; epsEl.max=d.epsRange[1]; epsEl.value=d.epsDef;
+  delEl.min=d.delRange[0]; delEl.max=d.delRange[1]; delEl.value=d.delDef;
+  gnote.textContent=d.note; buildRounds(); updateGame();
+}
+document.querySelectorAll('.ftab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.ftab').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on'); curFn=t.dataset.fn; applyFn();
+}));
+epsEl.addEventListener('input',updateGame);
+delEl.addEventListener('input',updateGame);
+hintchk.addEventListener('change',updateGame);
+document.getElementById('harder').addEventListener('click',()=>{
+  let e=Math.max(parseFloat(epsEl.min),parseFloat(epsEl.value)/2); epsEl.value=e.toFixed(2); updateGame();
+});
+document.getElementById('autowin').addEventListener('click',()=>{
+  const d=FUNCS[curFn]; let dd=Math.max(parseFloat(delEl.min),d.winDelta(parseFloat(epsEl.value))*0.9);
+  delEl.value=dd.toFixed(3); updateGame();
+});
+document.getElementById('reset').addEventListener('click',()=>{passed[curFn].clear();hintchk.checked=false;applyFn();});
+applyFn();
+
+/* ===== Slide 6 quiz（題型固定、ε 每次隨機） ===== */
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+function n(x){ return +(+x).toFixed(2); }            // 去尾零的數字
+// 直線題：f(x)=ax+b，距離 = a|x−x0|，δ = ε ÷ a
+function linQ(slopes, vary){
+  const a=pick(slopes), x0=pick([1,2]), b=pick([1,2]), L=a*x0+b;
+  const dt=pick([0.05,0.1,0.15,0.2]), eps=n(a*dt), ans=dt;
+  return {kind:'lin', tag:'直線',
+    prompt:'f(x) = '+a+'x + '+b+'，x₀ = '+x0+'，L = '+L+'。審查官出 <b>ε = '+eps+'</b>。'+
+      (vary?'<br><span style="color:#b8362b">（注意：斜率是 '+a+'，不是 2！）</span>':''),
+    ans:ans,
+    hint:'直線：|f(x)−L| = '+a+'|x−x₀|，令它 &lt; ε ⟹ δ = ε ÷ '+a+'。',
+    sol:'|('+a+'x+'+b+')−'+L+'| = '+a+'|x−'+x0+'| &lt; '+eps+' ⟹ |x−'+x0+'| &lt; '+ans+
+      '，所以 <b>δ = ε ÷ '+a+' = '+ans+'</b>。'};
+}
+// 曲線題：f(x)=x²，x₀=1，L=1，δ = √(1+ε) − 1（用完全平方的 ε，答案乾淨）
+function quadQ(pairs){
+  const p=pick(pairs), eps=p[0], ans=p[1], root=n(1+ans);
+  return {kind:'quad', tag:'曲線',
+    prompt:'f(x) = x²，x₀ = 1，L = 1。審查官出 <b>ε = '+eps+'</b>。',
+    ans:ans,
+    hint:'曲線 x₀=1：解 (1+δ)² ≤ 1+ε ⟹ δ = √(1+ε) − 1。找一個數，平方後等於 1+ε。',
+    sol:'(1+δ)² ≤ 1+'+eps+' ⟹ δ = √'+n(1+eps)+' − 1 = '+root+' − 1 = <b>'+ans+'</b>。'};
+}
+const SLOTS=[
+  ()=>linQ([2], false),                       // 第1題：直線基礎（斜率 2）
+  ()=>linQ([3,4,5], true),                    // 第2題：直線·斜率變化
+  ()=>quadQ([[0.21,0.1],[0.44,0.2]]),         // 第3題：曲線 x²（小 ε）
+  ()=>quadQ([[0.69,0.3],[0.96,0.4]])          // 第4題：曲線 x²（大 ε）
+];
+function buildQuiz(){ return SLOTS.map(g=>g()); }
+let QUIZ=buildQuiz();
+let qIdx=0, qScore=0, qAnswered=false, quizStarted=false, quizFinished=false, qResults=[];
+const qnum=document.getElementById('qnum'), qscoreEl=document.getElementById('qscore');
+const qbody=document.getElementById('qbody'), qans=document.getElementById('qans');
+const qfb=document.getElementById('qfeedback'), qnext=document.getElementById('qnext');
+const qcheck=document.getElementById('qcheck'), qhint=document.getElementById('qhint');
+
+function initQuiz(){ if(!quizStarted){quizStarted=true; qResults=[]; renderQuestion();} }
+function renderQuestion(){
+  const q=QUIZ[qIdx];
+  qnum.textContent=qIdx+1; qscoreEl.textContent=qScore;
+  qbody.innerHTML='<span class="qfn '+(q.kind==='lin'?'lin':'quad')+'">'+q.tag+'</span>'+q.prompt+
+    '<br><span style="font-size:.9rem;color:var(--ink-soft)">求「保證命中」的最大 δ（≈ 小數第 3 位）。</span>';
+  qans.value=''; qans.disabled=false; qfb.className='qfeedback'; qfb.innerHTML='';
+  qnext.style.display='none'; qcheck.style.display=''; qhint.style.display='';
+  qAnswered=false; qans.focus();
+}
+function checkAnswer(){
+  if(qAnswered) return;
+  const q=QUIZ[qIdx], v=parseFloat(qans.value);
+  if(isNaN(v)){ qfb.className='qfeedback show bad'; qfb.innerHTML='請先輸入一個數字喔。'; return; }
+  qAnswered=true; qans.disabled=true; qcheck.style.display='none'; qhint.style.display='none';
+  const diff=Math.abs(v-q.ans), correct=diff<=0.01;
+  qResults[qIdx]=correct;
+  recordProgress({fn:'quizitem', level:qIdx+1, eps: correct?1:0});
+  if(correct){
+    qScore++; qfb.className='qfeedback show ok';
+    qfb.innerHTML='🎯 答對了！<br>'+q.sol;
+  }else if(diff<=0.05){
+    qfb.className='qfeedback show bad';
+    qfb.innerHTML='✏️ 很接近了，但還不夠精確。正確答案 δ ≈ <b>'+q.ans.toFixed(3)+'</b>。<br>'+q.sol;
+  }else{
+    qfb.className='qfeedback show bad';
+    qfb.innerHTML='💡 再想想。正確答案 δ ≈ <b>'+q.ans.toFixed(3)+'</b>。<br>'+q.sol;
+  }
+  qscoreEl.textContent=qScore;
+  qnext.style.display=''; qnext.textContent=(qIdx<QUIZ.length-1)?'下一題 →':'看成績 →';
+}
+function nextQuestion(){
+  if(qIdx<QUIZ.length-1){ qIdx++; renderQuestion(); }
+  else{ finishQuiz(); }
+}
+function weakAdvice(){
+  var wrong=qResults.filter(function(c){return !c;}).length;
+  if(wrong===0) return '<div class="qadvice good">🌟 四題全對！直線與曲線的 δ 計算你都掌握了，可以挑戰更難的函數。'+
+    '<div class="qjump"><button class="jumpbtn" onclick="go(3)">↩ 回去玩進階曲線關卡</button></div></div>';
+  var topic, tip, dest, destName;
+  if((!qResults[2]?1:0)+(!qResults[3]?1:0) > 0){
+    topic='曲線 x²（非線性）'; tip='δ 不再是固定比例！解 (1+δ)² ≤ 1+ε，得 δ = √(1+ε) − 1。';
+    dest=4; destName='第 5 頁 · 兩種 δ 的算法';
+  }else if(!qResults[1]){
+    topic='直線 · 斜率變化'; tip='δ = ε ÷ 斜率，斜率不一定是 2——先看清楚 f(x) 前面的係數。';
+    dest=4; destName='第 5 頁 · 兩種 δ 的算法';
+  }else{
+    topic='直線基礎'; tip='先把 |f(x)−L| 化成「斜率 × |x−x₀|」，再令它小於 ε。';
+    dest=3; destName='第 4 頁 · ε–δ 射箭挑戰';
+  }
+  return '<div class="qadvice">📌 你最需要加強的是「<b>'+topic+'</b>」題型。<br><span>'+tip+'</span>'+
+    '<div class="qjump"><button class="jumpbtn" onclick="go('+dest+')">↩ 回'+destName+'重看</button></div></div>';
+}
+function finishQuiz(){
+  quizFinished=true;
+  qbody.innerHTML='<div class="qdone"><div class="big">'+qScore+' / '+QUIZ.length+'</div>'+
+    '<div style="margin-top:6px;font-size:1.05rem">'+(qScore===QUIZ.length?'完美！你已經完全掌握 ε–δ 的計算了 🏆':
+      qScore>=QUIZ.length-1?'很棒！只差一點點就滿分了 👍':
+      qScore>=2?'不錯的開始，回前面幾頁再複習一下計算法吧。':'別灰心，回去重看「兩種機器」那一頁，再試一次！')+'</div>'+
+    weakAdvice()+'</div>';
+  document.querySelector('.qinput').style.display='none';
+  qfb.className='qfeedback'; qfb.innerHTML='';
+  qnext.textContent='↺ 再挑戰一次'; qnext.style.display='';
+  recordProgress({fn:'quiz', level:qScore, eps:0});
+}
+qcheck.addEventListener('click',checkAnswer);
+qhint.addEventListener('click',()=>{ qfb.className='qfeedback show ok'; qfb.innerHTML='💭 提示：'+QUIZ[qIdx].hint; });
+qnext.addEventListener('click',()=>{
+  if(quizFinished){ QUIZ=buildQuiz(); qIdx=0; qScore=0; qResults=[]; quizFinished=false; document.querySelector('.qinput').style.display='flex'; renderQuestion(); }
+  else nextQuestion();
+});
+qans.addEventListener('keydown',e=>{ if(e.key==='Enter'){ qAnswered?nextQuestion():checkAnswer(); }});
+
+/* ===== Slide 7 hole (gated conclusion) ===== */
+const hc=document.getElementById('holecanvas');
+let broken=false, seenOk=true, seenBroken=false;
+const holeLock=document.getElementById('holeLock'), holeCallout=document.getElementById('holeCallout');
+function revealCheck(){
+  if(seenOk&&seenBroken){
+    holeLock.style.display='none';
+    holeCallout.style.display='block';
+    requestAnimationFrame(()=>{holeCallout.style.opacity='1';holeCallout.style.transform='none';});
+  }
+}
+function drawHole(){
+  const {w,h,ctx}=prep(hc,460,358);
+  const pad={l:42,r:14,t:14,b:28}, pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  const X=x=>pad.l+x/4*pw, Y=y=>pad.t+(10-y)/10*ph;
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffdf6'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#ece0c4'; ctx.lineWidth=1; ctx.font='10px "Noto Sans TC"'; ctx.fillStyle='#9a8f78';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let gx=0;gx<=4;gx++){ctx.beginPath();ctx.moveTo(X(gx),pad.t);ctx.lineTo(X(gx),pad.t+ph);ctx.stroke();ctx.fillText(gx,X(gx),pad.t+ph+5);}
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let gy=0;gy<=10;gy+=2){ctx.beginPath();ctx.moveTo(pad.l,Y(gy));ctx.lineTo(pad.l+pw,Y(gy));ctx.stroke();ctx.fillText(gy,pad.l-6,Y(gy));}
+  ctx.strokeStyle='rgba(46,125,99,.5)'; ctx.setLineDash([5,4]); ctx.lineWidth=1.3;
+  ctx.beginPath();ctx.moveTo(pad.l,Y(5));ctx.lineTo(X(2),Y(5));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(X(2),pad.t+ph);ctx.lineTo(X(2),Y(5));ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#2e7d63'; ctx.textAlign='left'; ctx.textBaseline='bottom'; ctx.font='bold 11px "Noto Serif TC"';
+  ctx.fillText('L = 5',pad.l+4,Y(5)-2);
+  ctx.strokeStyle='#2a2622'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(X(0),Y(fLin(0))); ctx.lineTo(X(4),Y(fLin(4))); ctx.stroke();
+  if(broken){
+    ctx.beginPath(); ctx.arc(X(2),Y(5),6,0,7); ctx.fillStyle='#fffdf6'; ctx.fill(); ctx.lineWidth=2.5; ctx.strokeStyle='#b8362b'; ctx.stroke();
+    ctx.fillStyle='#b8362b'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.font='bold 10px "Noto Sans TC"';
+    ctx.fillText('沒有定義（洞）',X(2)+10,Y(5)-9);
+  }else{
+    ctx.beginPath(); ctx.arc(X(2),Y(5),5,0,7); ctx.fillStyle='#2a2622'; ctx.fill();
+    ctx.fillStyle='#2a2622'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.font='bold 10px "Noto Serif TC"';
+    ctx.fillText('(2, 5)',X(2)+2,Y(5)-9);
+  }
+  ctx.fillStyle='rgba(184,54,43,.9)'; ctx.font='13px "Noto Sans TC"'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('→',X(1.5),Y(fLin(1.5))-13); ctx.fillText('←',X(2.5),Y(fLin(2.5))+13);
+}
+document.getElementById('machineOk').addEventListener('click',function(){
+  broken=false; seenOk=true; this.classList.add('on'); document.getElementById('machineBroken').classList.remove('on');
+  document.getElementById('holeText').innerHTML='這是正常的 f(x)=2x+1，在 x=2 時輸出 5。'; drawHole(); revealCheck();
+});
+document.getElementById('machineBroken').addEventListener('click',function(){
+  broken=true; seenBroken=true; this.classList.add('on'); document.getElementById('machineOk').classList.remove('on');
+  document.getElementById('holeText').innerHTML='機器壞了！x=2 沒有定義（挖了一個洞）。但從兩側逼近，f(x) 仍然 → 5，<b>極限照樣是 5</b>。'; drawHole(); revealCheck();
+});
+</script>
+</body>
+</html>
